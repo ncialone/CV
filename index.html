@@ -74,20 +74,42 @@
   }
 
   #cv-container {
+    position: relative;
     max-width: 1100px;
+    width: 100%;
     margin: 16px auto 48px;
-    display: grid;
-    grid-template-columns: 300px 1fr;
     background: var(--bg-main);
     box-shadow: 0 4px 24px rgba(0,0,0,0.08);
     border-radius: 10px;
     overflow: hidden;
-    min-height: 900px;
+  }
+
+  /* Equal-height columns via a real, plain DOM element (.sidebar-bg)
+     absolutely positioned to always match the container's full height,
+     with the sidebar itself floated on top of it. html2canvas (used by
+     the PDF-download button) has real trouble with CSS Grid's row
+     stretch AND with display:table/table-cell's column sizing (both
+     were tried and both produced broken/cropped exports) — plain
+     float + absolute positioning with explicit pixel widths is the
+     one layout technique it has always rendered correctly. */
+  .sidebar-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 300px;
+    background: var(--graphite-900);
+    z-index: 0;
   }
 
   /* ---------- SIDEBAR ---------- */
   .sidebar {
-    background: var(--graphite-900);
+    position: relative;
+    z-index: 1;
+    float: left;
+    width: 300px;
+    box-sizing: border-box;
+    background: transparent;
     color: var(--sidebar-text);
     padding: 36px 26px;
   }
@@ -141,24 +163,6 @@
 
   .sidebar .lang-toggle:hover { background: var(--graphite-700); }
 
-  .sidebar .pdf-btn {
-    display: block;
-    width: 100%;
-    margin-bottom: 26px;
-    background: var(--accent);
-    border: none;
-    color: var(--graphite-900);
-    padding: 10px 10px;
-    border-radius: 6px;
-    font-family: var(--font);
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-
-  .sidebar .pdf-btn:hover { background: #9ea5ab; }
-  .sidebar .pdf-btn[disabled] { opacity: 0.6; cursor: wait; }
-
   .sidebar h2 {
     font-size: 11px;
     text-transform: uppercase;
@@ -205,6 +209,8 @@
 
   /* ---------- MAIN CONTENT ---------- */
   .main {
+    margin-left: 300px;
+    box-sizing: border-box;
     padding: 40px 44px;
   }
 
@@ -340,7 +346,9 @@
 
   /* ---------- RESPONSIVE ---------- */
   @media (max-width: 720px) {
-    #cv-container { grid-template-columns: 1fr; }
+    .sidebar-bg { display: none; }
+    .sidebar { float: none; width: auto; background: var(--graphite-900); }
+    .main { margin-left: 0; }
     .toolbar { justify-content: center; flex-wrap: wrap; }
   }
 
@@ -353,9 +361,16 @@
       border-radius: 0;
       margin: 0;
       max-width: 100%;
-      min-height: 0;
     }
-    .sidebar, .main { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .sidebar, .main, .sidebar-bg { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+
+  /* Applied temporarily (via JS) only while html2pdf.js is capturing the
+     page, so the drop shadow / rounded corners don't leave stray slivers
+     on the exported PDF's page cuts. */
+  .pdf-mode #cv-container {
+    box-shadow: none;
+    border-radius: 0;
   }
 </style>
 </head>
@@ -367,14 +382,13 @@
 </div>
 
 <div id="cv-container">
+  <div class="sidebar-bg"></div>
   <aside class="sidebar">
     <div class="photo-wrap">
       <img src="assets/nahuel-cialone.jpg" alt="Nahuel Cialone">
     </div>
     <h1>Nahuel Cialone</h1>
     <div class="tagline" data-i18n="tagline"></div>
-
-    <button class="pdf-btn" id="pdfBtnSide" type="button" data-i18n="pdfButton"></button>
 
     <h2 data-i18n="contactHeading"></h2>
     <ul class="contact-list">
@@ -416,7 +430,8 @@
   </main>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 /* =============================================================
    CONTENIDO DEL CV — editá acá para actualizar el texto.
@@ -424,10 +439,10 @@
    ============================================================= */
 const CONTENT = {
   es: {
-    tagline: "Analista Funcional de Sistemas | Analista de Datos & BI | Backend PHP/Laravel",
+    tagline: "Analista Funcional de Sistemas | Analista de Datos & BI | Backend Junior PHP/Laravel",
     pdfButton: "Descargar CV en PDF",
     contactHeading: "Contacto",
-    location: "Argentina",
+    location: "San Andrés, partido de Gral. San Martín, Provincia de Buenos Aires",
     skillsHeading: "Competencias Clave",
     summaryHeading: "Perfil Profesional",
     experienceHeading: "Experiencia Profesional",
@@ -436,7 +451,7 @@ const CONTENT = {
     certsHeading: "Certificaciones y Cursos Complementarios",
     summary: [
       "Analista Funcional de Sistemas y Analista de Datos con más de 4 años de experiencia en el relevamiento y análisis de procesos operativos y de gestión, documentación de requerimientos y coordinación entre áreas de negocio y equipos técnicos. Previamente, cerca de 15 años de trayectoria en logística, despacho y gestión administrativa de procesos operativos, una base que aporta una visión operativa sólida al trabajo funcional y analítico actual.",
-      "Especializado en el uso de datos para la toma de decisiones: construcción de dashboards y reportes con Python (pandas, openpyxl), Power Query, Excel avanzado, JavaScript embebido en HTML para cálculos de tableros y Google Looker Studio, además de uso puntual de Power BI (DAX) en etapas iniciales. Trabajo día a día sobre el ERP SAF para extracción, transformación y modelado de datos, documentación de requerimientos y validación funcional de desarrollos. Complemento el perfil funcional con base técnica en desarrollo backend (PHP, Laravel, Python, Java), lo que facilita la comunicación entre las áreas de negocio y los equipos técnicos."
+      "Especializado en el uso de datos para la toma de decisiones: construcción de dashboards y reportes en HTML, aplicando scripts de Python y SQL para la limpieza y transformación de datos desde el ERP, junto con Excel avanzado. Trabajo día a día en la extracción, transformación y modelado de datos, la documentación de requerimientos y la validación funcional de desarrollos. Complemento el perfil funcional con una base técnica en desarrollo backend, ganada en experiencias como desarrollador junior con PHP y el framework Laravel, Python y el framework Django, y Java como mi primer acercamiento a un lenguaje de tipado fuerte. Por eso mi perfil facilita la comunicación entre las áreas de negocio y los equipos técnicos."
     ],
     experience: [
       {
@@ -574,10 +589,10 @@ const CONTENT = {
     ]
   },
   en: {
-    tagline: "Functional Systems Analyst | Data & BI Analyst | PHP/Laravel Backend",
+    tagline: "Functional Systems Analyst | Data & BI Analyst | Junior PHP/Laravel Backend",
     pdfButton: "Download CV as PDF",
     contactHeading: "Contact",
-    location: "Argentina",
+    location: "San Andrés, Gral. San Martín, Buenos Aires Province, Argentina",
     skillsHeading: "Key Skills",
     summaryHeading: "Professional Profile",
     experienceHeading: "Professional Experience",
@@ -586,7 +601,7 @@ const CONTENT = {
     certsHeading: "Certifications & Additional Courses",
     summary: [
       "Functional Systems Analyst and Data Analyst with 4+ years of experience in the analysis of operational and management processes, requirements gathering and documentation, and coordination between business and technical teams. Previously, close to 15 years in logistics, dispatch and administrative management of operational processes — a background that brings a solid operational perspective to my current functional and analytical work.",
-      "Focused on using data for decision-making: building dashboards and reports with Python (pandas, openpyxl), Power Query, advanced Excel, JavaScript embedded in HTML for dashboard calculations, and Google Looker Studio, plus early-stage use of Power BI (DAX). I work daily with the SAF ERP for data extraction, transformation and modeling, requirements documentation and functional validation of developments. I complement the functional profile with a technical background in backend development (PHP, Laravel, Python, Java), which helps bridge communication between business and technical teams."
+      "Focused on using data for decision-making: building dashboards and reports in HTML, applying Python and SQL scripts to clean and transform data from the ERP, along with advanced Excel. I work daily on data extraction, transformation and modeling, requirements documentation and functional validation of developments. I complement the functional profile with a backend development background gained through junior developer experience with PHP and the Laravel framework, Python and the Django framework, and Java as my first exposure to a strongly-typed language. That's why my profile helps bridge communication between business and technical teams."
     ],
     experience: [
       {
@@ -795,31 +810,130 @@ function toggleLang() {
   render(currentLang);
 }
 
-function downloadPdf() {
-  const buttons = [document.getElementById("pdfBtnTop"), document.getElementById("pdfBtnSide")];
+/* Builds the PDF by hand with html2canvas + jsPDF instead of the higher-level
+   html2pdf.js helper: that helper was found to silently squeeze this page's
+   content into a ~794px-wide render (roughly A4 width in CSS pixels) no
+   matter what options were passed, cropping most of the sidebar and the
+   left edge of the main column on every export. Calling html2canvas
+   directly captures the real, full-width element correctly, and this
+   function then slices that single tall image into A4 pages itself —
+   nudging each page break so it never lands in the middle of a job entry,
+   a sub-role, or a "previous experience" item. */
+async function downloadPdf() {
+  const buttons = [document.getElementById("pdfBtnTop")];
   buttons.forEach(b => b.disabled = true);
+  document.body.classList.add("pdf-mode");
 
-  const filename = currentLang === "es"
-    ? "CV_Nahuel_Cialone.pdf"
-    : "Nahuel_Cialone_Resume.pdf";
+  try {
+    const container = document.getElementById("cv-container");
+    const containerTop = container.getBoundingClientRect().top;
 
-  const opt = {
-    margin: 0,
-    filename: filename,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    pagebreak: { mode: ["css", "avoid-all"] }
-  };
+    const canvas = await html2canvas(container, { scale: 2, useCORS: true });
+    const scaleFactor = canvas.width / container.getBoundingClientRect().width;
 
-  html2pdf().set(opt).from(document.getElementById("cv-container")).save()
-    .then(() => buttons.forEach(b => b.disabled = false))
-    .catch(() => buttons.forEach(b => b.disabled = false));
+    // Elements that must never be split across a page break, translated
+    // into their [top, bottom] range in canvas-pixel space.
+    const avoidSelectors = ".job, .subrole, .company-block, .prior-item";
+    const avoidRanges = Array.from(document.querySelectorAll(avoidSelectors)).map(el => {
+      const r = el.getBoundingClientRect();
+      return {
+        top: (r.top - containerTop) * scaleFactor,
+        bottom: (r.bottom - containerTop) * scaleFactor
+      };
+    });
+
+    // Hardcoded: "Experiencia Previa en Logística" always starts on a
+    // fresh page, rather than having its heading (or first entries) left
+    // dangling at the bottom of the previous page.
+    const forcedBreakTops = Array.from(document.querySelectorAll(".prior")).map(el =>
+      (el.getBoundingClientRect().top - containerTop) * scaleFactor
+    );
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+    const pageWidthMm = pdf.internal.pageSize.getWidth();
+    const pageHeightMm = pdf.internal.pageSize.getHeight();
+    const pxToMm = pageWidthMm / canvas.width;
+    const basePageHeightPx = pageHeightMm / pxToMm;
+
+    // Matches .main's own padding-top (40px) — reproduced here so a page
+    // that starts with a forced section break gets the same breathing
+    // room above its heading that page 1 has above "PERFIL PROFESIONAL".
+    const topPaddingPx = 40 * scaleFactor;
+    const sidebarWidthPx = 300 * scaleFactor;
+    const sidebarColor = getComputedStyle(document.documentElement)
+      .getPropertyValue("--graphite-900").trim() || "#1d1f22";
+
+    let y = 0;
+    let pageIndex = 0;
+    while (y < canvas.height - 1) {
+      const isForcedPageStart = forcedBreakTops.some(t => Math.abs(t - y) < 2);
+      const topMargin = isForcedPageStart ? topPaddingPx : 0;
+
+      let sliceEnd = Math.min(y + (basePageHeightPx - topMargin), canvas.height);
+
+      // If this cut point falls inside a protected block, move it up to
+      // that block's top edge so the whole block flows to the next page.
+      for (const range of avoidRanges) {
+        if (sliceEnd > range.top && sliceEnd < range.bottom) {
+          if (range.top > y + 40) {
+            sliceEnd = range.top;
+          }
+          break;
+        }
+      }
+
+      // Forced section breaks always win, even if that leaves whitespace
+      // at the bottom of the current page — but only when the section
+      // doesn't already start right at the top of this page (otherwise
+      // this would insert a near-blank extra page for no reason).
+      for (const breakTop of forcedBreakTops) {
+        if (breakTop > y + 50 && breakTop < sliceEnd) {
+          sliceEnd = breakTop;
+        }
+      }
+
+      const sliceHeight = Math.max(1, Math.round(sliceEnd - y));
+      const pageCanvas = document.createElement("canvas");
+      pageCanvas.width = canvas.width;
+      pageCanvas.height = sliceHeight + topMargin;
+      const ctx = pageCanvas.getContext("2d");
+
+      if (topMargin > 0) {
+        // White page background, with the sidebar's dark column carried
+        // through the margin gap so it reads as one continuous panel —
+        // only the main (right) column gets the extra breathing room.
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+        ctx.fillStyle = sidebarColor;
+        ctx.fillRect(0, 0, sidebarWidthPx, topMargin);
+      }
+
+      ctx.drawImage(
+        canvas, 0, y, canvas.width, sliceHeight,
+        0, topMargin, canvas.width, sliceHeight
+      );
+
+      const imgData = pageCanvas.toDataURL("image/jpeg", 0.95);
+      if (pageIndex > 0) pdf.addPage();
+      pdf.addImage(imgData, "JPEG", 0, 0, pageWidthMm, (sliceHeight + topMargin) * pxToMm);
+
+      y += sliceHeight;
+      pageIndex++;
+    }
+
+    const filename = currentLang === "es"
+      ? "CV_Nahuel_Cialone.pdf"
+      : "Nahuel_Cialone_Resume.pdf";
+    pdf.save(filename);
+  } finally {
+    buttons.forEach(b => b.disabled = false);
+    document.body.classList.remove("pdf-mode");
+  }
 }
 
 document.getElementById("langToggleBtn").addEventListener("click", toggleLang);
 document.getElementById("pdfBtnTop").addEventListener("click", downloadPdf);
-document.getElementById("pdfBtnSide").addEventListener("click", downloadPdf);
 
 render(currentLang);
 </script>
