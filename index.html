@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nahuel Cialone — CV</title>
+<meta name="description" content="Curriculum Vitae de Nahuel Cialone — Analista Funcional de Sistemas / Analista de Datos & BI">
+
+<!-- ============================================================
+     CV de Nahuel Cialone — index.html
+     Cómo editar el contenido:
+     Todo el texto (español e inglés) vive en el objeto JS `CONTENT`,
+     al final de este archivo, dentro de <script>. Cada bloque tiene
+     una clave "es" y una clave "en". Para actualizar el CV, editá
+     ese objeto y guardá — no hace falta tocar el HTML ni el CSS.
+     ============================================================ -->
+
+<style>
+  :root {
+    --graphite-900: #1d1f22;
+    --graphite-800: #2a2d31;
+    --graphite-700: #3a3e43;
+    --graphite-500: #6b7075;
+    --graphite-300: #b7bcc1;
+    --graphite-100: #f3f3f4;
+    --accent: #8a9199;
+    --text-main: #24262b;
+    --text-muted: #5b6066;
+    --bg-main: #ffffff;
+    --sidebar-text: #e7e8ea;
+    --sidebar-text-muted: #a7acb2;
+    --font: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: var(--font);
+    color: var(--text-main);
+    background: var(--graphite-100);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .toolbar {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 16px 24px 0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .toolbar button {
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid var(--graphite-500);
+    background: var(--bg-main);
+    color: var(--graphite-800);
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .toolbar button:hover {
+    background: var(--graphite-800);
+    color: #fff;
+    border-color: var(--graphite-800);
+  }
+
+  #cv-container {
+    max-width: 1100px;
+    margin: 16px auto 48px;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    background: var(--bg-main);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    border-radius: 10px;
+    overflow: hidden;
+    min-height: 900px;
+  }
+
+  /* ---------- SIDEBAR ---------- */
+  .sidebar {
+    background: var(--graphite-900);
+    color: var(--sidebar-text);
+    padding: 36px 26px;
+  }
+
+  .photo-wrap {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 0 auto 20px;
+    border: 3px solid var(--graphite-700);
+  }
+
+  .photo-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .sidebar h1 {
+    font-size: 21px;
+    text-align: center;
+    margin: 0 0 4px;
+    color: #fff;
+    letter-spacing: 0.3px;
+  }
+
+  .sidebar .tagline {
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--sidebar-text-muted);
+    line-height: 1.5;
+    margin-bottom: 22px;
+  }
+
+  .sidebar .lang-toggle {
+    display: block;
+    width: 100%;
+    margin-bottom: 10px;
+    background: transparent;
+    border: 1px solid var(--graphite-500);
+    color: var(--sidebar-text);
+    padding: 9px 10px;
+    border-radius: 6px;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .sidebar .lang-toggle:hover { background: var(--graphite-700); }
+
+  .sidebar .pdf-btn {
+    display: block;
+    width: 100%;
+    margin-bottom: 26px;
+    background: var(--accent);
+    border: none;
+    color: var(--graphite-900);
+    padding: 10px 10px;
+    border-radius: 6px;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .sidebar .pdf-btn:hover { background: #9ea5ab; }
+  .sidebar .pdf-btn[disabled] { opacity: 0.6; cursor: wait; }
+
+  .sidebar h2 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--sidebar-text-muted);
+    border-bottom: 1px solid var(--graphite-700);
+    padding-bottom: 6px;
+    margin: 22px 0 10px;
+  }
+
+  .sidebar ul.contact-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 13px;
+  }
+
+  .sidebar ul.contact-list li {
+    margin-bottom: 8px;
+    word-break: break-word;
+  }
+
+  .sidebar ul.contact-list a {
+    color: var(--sidebar-text);
+    text-decoration: none;
+  }
+
+  .sidebar ul.contact-list a:hover { text-decoration: underline; }
+
+  .skill-group { margin-bottom: 14px; }
+
+  .skill-group .skill-cat {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  .skill-group .skill-items {
+    font-size: 12px;
+    color: var(--sidebar-text-muted);
+    line-height: 1.6;
+  }
+
+  /* ---------- MAIN CONTENT ---------- */
+  .main {
+    padding: 40px 44px;
+  }
+
+  .main section { margin-bottom: 28px; page-break-inside: avoid; }
+
+  .main h2 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--graphite-800);
+    border-bottom: 2px solid var(--graphite-800);
+    padding-bottom: 6px;
+    margin: 0 0 14px;
+  }
+
+  .main .summary p {
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: var(--text-main);
+    margin: 0 0 10px;
+  }
+
+  .job { margin-bottom: 20px; page-break-inside: avoid; }
+  .job:last-child { margin-bottom: 0; }
+
+  .job .job-title {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--graphite-900);
+  }
+
+  .job .job-title .company { color: var(--graphite-700); }
+
+  .job .job-meta {
+    font-size: 12px;
+    font-style: italic;
+    color: var(--text-muted);
+    margin: 2px 0 8px;
+  }
+
+  .job ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+
+  .job ul li {
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 4px;
+    color: var(--text-main);
+  }
+
+  .company-block { margin-bottom: 20px; page-break-inside: avoid; }
+  .company-block:last-child { margin-bottom: 0; }
+
+  .company-block .company-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--graphite-900);
+    margin-bottom: 2px;
+  }
+
+  .company-block .company-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .subrole {
+    padding-left: 14px;
+    border-left: 2px solid var(--graphite-300);
+    margin-bottom: 14px;
+  }
+
+  .subrole:last-child { margin-bottom: 0; }
+
+  .subrole .subrole-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--graphite-800);
+  }
+
+  .subrole .subrole-meta {
+    font-size: 12px;
+    font-style: italic;
+    color: var(--text-muted);
+    margin: 1px 0 6px;
+  }
+
+  .prior-item {
+    margin-bottom: 12px;
+    page-break-inside: avoid;
+  }
+
+  .prior-item:last-child { margin-bottom: 0; }
+
+  .prior-item .prior-head {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--graphite-900);
+  }
+
+  .prior-item .prior-period {
+    font-size: 12px;
+    font-style: italic;
+    color: var(--text-muted);
+    margin: 1px 0 4px;
+  }
+
+  .prior-item .prior-note {
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--text-main);
+  }
+
+  .placeholder-note {
+    font-size: 12px;
+    color: #a15b00;
+    background: #fff6e9;
+    border: 1px dashed #e0a94a;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-top: 6px;
+  }
+
+  .edu-item, .cert-item {
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 6px;
+  }
+
+  .edu-item .school, .cert-item .provider { font-weight: 700; }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 720px) {
+    #cv-container { grid-template-columns: 1fr; }
+    .toolbar { justify-content: center; flex-wrap: wrap; }
+  }
+
+  /* ---------- PRINT ---------- */
+  @media print {
+    body { background: #fff; }
+    .toolbar { display: none; }
+    #cv-container {
+      box-shadow: none;
+      border-radius: 0;
+      margin: 0;
+      max-width: 100%;
+      min-height: 0;
+    }
+    .sidebar, .main { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <button id="langToggleBtn" type="button">EN</button>
+  <button id="pdfBtnTop" type="button">⬇ <span data-i18n="pdfButton">Descargar CV en PDF</span></button>
+</div>
+
+<div id="cv-container">
+  <aside class="sidebar">
+    <div class="photo-wrap">
+      <img src="assets/nahuel-cialone.jpg" alt="Nahuel Cialone">
+    </div>
+    <h1>Nahuel Cialone</h1>
+    <div class="tagline" data-i18n="tagline"></div>
+
+    <button class="pdf-btn" id="pdfBtnSide" type="button" data-i18n="pdfButton"></button>
+
+    <h2 data-i18n="contactHeading"></h2>
+    <ul class="contact-list">
+      <li>✉ <a href="mailto:ncialone@gmail.com">ncialone@gmail.com</a></li>
+      <li>in <a href="https://www.linkedin.com/in/ncialone" target="_blank" rel="noopener">linkedin.com/in/ncialone</a></li>
+      <li>⌥ <a href="https://github.com/ncialone" target="_blank" rel="noopener">github.com/ncialone</a></li>
+      <li><span data-i18n="location"></span></li>
+    </ul>
+
+    <h2 data-i18n="skillsHeading"></h2>
+    <div id="skillsList"></div>
+  </aside>
+
+  <main class="main">
+    <section class="summary">
+      <h2 data-i18n="summaryHeading"></h2>
+      <div id="summaryText"></div>
+    </section>
+
+    <section class="experience">
+      <h2 data-i18n="experienceHeading"></h2>
+      <div id="experienceList"></div>
+    </section>
+
+    <section class="prior">
+      <h2 data-i18n="priorHeading"></h2>
+      <div id="priorList"></div>
+    </section>
+
+    <section class="education">
+      <h2 data-i18n="educationHeading"></h2>
+      <div id="educationList"></div>
+    </section>
+
+    <section class="certifications">
+      <h2 data-i18n="certsHeading"></h2>
+      <div id="certsList"></div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+/* =============================================================
+   CONTENIDO DEL CV — editá acá para actualizar el texto.
+   Cada campo tiene "es" (español) y "en" (inglés).
+   ============================================================= */
+const CONTENT = {
+  es: {
+    tagline: "Analista Funcional de Sistemas | Analista de Datos & BI | Backend PHP/Laravel",
+    pdfButton: "Descargar CV en PDF",
+    contactHeading: "Contacto",
+    location: "Argentina",
+    skillsHeading: "Competencias Clave",
+    summaryHeading: "Perfil Profesional",
+    experienceHeading: "Experiencia Profesional",
+    priorHeading: "Experiencia Previa en Logística",
+    educationHeading: "Formación",
+    certsHeading: "Certificaciones y Cursos Complementarios",
+    summary: [
+      "Analista Funcional de Sistemas y Analista de Datos con más de 4 años de experiencia en el relevamiento y análisis de procesos operativos y de gestión, documentación de requerimientos y coordinación entre áreas de negocio y equipos técnicos. Previamente, cerca de 15 años de trayectoria en logística, despacho y gestión administrativa de procesos operativos, una base que aporta una visión operativa sólida al trabajo funcional y analítico actual.",
+      "Especializado en el uso de datos para la toma de decisiones: construcción de dashboards y reportes con Python (pandas, openpyxl), Power Query, Excel avanzado, JavaScript embebido en HTML para cálculos de tableros y Google Looker Studio, además de uso puntual de Power BI (DAX) en etapas iniciales. Trabajo día a día sobre el ERP SAF para extracción, transformación y modelado de datos, documentación de requerimientos y validación funcional de desarrollos. Complemento el perfil funcional con base técnica en desarrollo backend (PHP, Laravel, Python, Java), lo que facilita la comunicación entre las áreas de negocio y los equipos técnicos."
+    ],
+    experience: [
+      {
+        company: "Lustramax",
+        meta: "Tortuguitas, Buenos Aires, Argentina",
+        subroles: [
+          {
+            title: "Responsable de Datos y Analista Funcional de Sistemas",
+            meta: "2025 – Actualidad",
+            bullets: [
+              "Relevamiento, análisis funcional y documentación de requerimientos junto a las áreas usuarias, en el marco del ERP SAF.",
+              "Coordinación con la consultora de desarrollo del ERP SAF, actuando como nexo entre negocio y tecnología.",
+              "Definición de reglas de negocio, validación funcional de desarrollos y acompañamiento en pruebas de aceptación.",
+              "Validación de soluciones implementadas junto a la consultora de desarrollo, asegurando su alineación con los procesos del negocio.",
+              "Diseño, construcción y mantenimiento de paneles de control e indicadores de gestión (KPIs), combinando Excel avanzado, Python (pandas, openpyxl), Power Query, JavaScript embebido en HTML y Google Looker Studio.",
+              "Extracción, transformación y modelado de datos desde el ERP SAF para reporting y análisis (SQL).",
+              "Desarrollo de reportes de gestión, dashboards ejecutivos, visualizaciones y análisis ad hoc.",
+              "Control de calidad, consistencia y confiabilidad de la información utilizada para la toma de decisiones.",
+              "Aplicación de conocimientos en programación y bases de datos para comprender la lógica técnica del ERP y facilitar la comunicación entre negocio y tecnología.",
+              "Soporte continuo a usuarios en el uso de herramientas de gestión y reportes."
+            ]
+          },
+          {
+            title: "Analista de Datos",
+            meta: "2023 – 2025",
+            bullets: [
+              "Análisis de datos comercial y administrativo para las áreas de compras, ventas, facturación y logística.",
+              "Desarrollo de múltiples tableros de gestión a medida de cada área involucrada.",
+              "Extracción, transformación y modelado de datos desde el ERP SAF para reporting (SQL).",
+              "Construcción de dashboards y reportes combinando Excel avanzado, Python (pandas, openpyxl), Power Query, JavaScript embebido en HTML y Google Looker Studio."
+            ]
+          },
+          {
+            title: "Analista de Logística",
+            meta: "Sept. 2021 – 2023",
+            bullets: [
+              "Análisis de datos aplicado a la gestión logística integral con depósito.",
+              "Gestión y seguimiento de flota propia y de terceros.",
+              "Análisis de costos operativos y de porcentaje de cumplimiento de entregas.",
+              "Control de mercadería despachada, con y sin conformidad apropiada."
+            ]
+          }
+        ]
+      },
+      {
+        role: "Gestión de Flota Logística de Aplicaciones",
+        company: "Independiente (Monotributista)",
+        meta: "2020 · Argentina",
+        bullets: [
+          "Gestión independiente de flota de reparto para aplicaciones de plataformas de delivery."
+        ]
+      },
+      {
+        role: "Analista de Tráfico y Planificación",
+        company: "Lustramax",
+        meta: "2019 · Tortuguitas, Buenos Aires, Argentina",
+        bullets: [
+          "Seguimiento de entregas y de las unidades de reparto en ruta.",
+          "Análisis de eficiencia de la operación mediante reportes a gerencia."
+        ]
+      }
+    ],
+    priorExperience: [
+      {
+        company: "24 Med (American Surgery)",
+        role: "Jefe de Logística",
+        period: "2017 – 2018",
+        note: "Equipo de ~20 personas; distribución y recupero de material ortopédico esterilizado y no esterilizado. Participé en la reorganización del layout del depósito, acelerando más de un 50% los tiempos de preparación y cumplimiento de entregas."
+      },
+      {
+        company: "Furlong",
+        role: "Administrativo de Flota Internacional",
+        period: "2016",
+        note: "Gestión de documentación de flota internacional para los clientes Ford y Volkswagen: manifiestos de carga de vehículos 0 km y registro aduanero en sistema Malvina para pasos fronterizos."
+      },
+      {
+        company: "American Surgery",
+        role: "Jefe de Logística (antes Analista Logístico)",
+        period: "2015 – 2016",
+        note: "Equipo de ~12 personas; distribución y recupero de material ortopédico para hospitales e instituciones privadas. Logros en reducción de costos, mejora de tiempos de entrega y optimización de rutas por zona."
+      },
+      {
+        company: "Codylsa",
+        role: "Gestión de Cuentas Unilever y P&G (antes Administrativo de Logística)",
+        period: "2014",
+        note: "Seguimiento de entregas, coordinación y planificación de repartos, análisis de reclamos y de mermas, y control con el sector de facturación."
+      },
+      {
+        company: "Emprendimiento independiente",
+        role: "Transporte",
+        period: "2013",
+        note: "Proyecto propio de empresa de transportes."
+      },
+      {
+        company: "Exologística",
+        role: "Administrativo de Documentación y Ruteo",
+        period: "2009 – 2012",
+        note: "Gestión de hojas de ruta y remitos desde origen, asignación y colaboración en el ruteo de unidades (sistema TMS), rendición y control de entregas y mermas. Implementé un sistema interno propio para la gestión de zonas de ruteo."
+      },
+      {
+        company: "Ryder Logistics",
+        role: "Administrativo de Despacho Logístico",
+        period: "2008",
+        note: "Documentación de hoja de ruta y remitos, control de conformes de carga y preparación de documentación para cross-docking (sistema WMS), en la operación logística de Philips."
+      }
+    ],
+    education: [
+      { school: "Centro de Estudios Ballester (CEB)", detail: "Bachiller en Administración y Gestión Empresarial." }
+    ],
+    certifications: [
+      "Coderhouse — Data Analyst.",
+      "Coderhouse — Python & Django Full Stack Developer.",
+      "Egg Cooperation — Java Full Stack Developer.",
+      "Udemy — Data Analysis & Visualization.",
+      "GitHub para programadores.",
+      "Fundamentos del desarrollo web."
+    ],
+    skills: [
+      {
+        cat: "Funcional & Negocio",
+        items: "Análisis funcional y documentación, historias de usuario y definición de alcance, coordinación inter-áreas, validación funcional y pruebas de aceptación, metodologías ágiles."
+      },
+      {
+        cat: "Datos & BI",
+        items: "SQL, análisis de datos, ETL, Excel avanzado (tablas dinámicas, BUSCARV, Power Query), Python (pandas, openpyxl), JavaScript para dashboards en HTML, Google Looker Studio, reporting, dashboards y KPIs, uso inicial de Power BI (DAX), administración de permisos y accesos."
+      },
+      {
+        cat: "Sistemas",
+        items: "ERP SAF (relevamiento, documentación y validación funcional)."
+      },
+      {
+        cat: "Desarrollo & Técnico",
+        items: "PHP, Laravel, Python, Java, arquitecturas de microservicios, Docker, Git / control de versiones, Linux."
+      }
+    ]
+  },
+  en: {
+    tagline: "Functional Systems Analyst | Data & BI Analyst | PHP/Laravel Backend",
+    pdfButton: "Download CV as PDF",
+    contactHeading: "Contact",
+    location: "Argentina",
+    skillsHeading: "Key Skills",
+    summaryHeading: "Professional Profile",
+    experienceHeading: "Professional Experience",
+    priorHeading: "Prior Logistics Experience",
+    educationHeading: "Education",
+    certsHeading: "Certifications & Additional Courses",
+    summary: [
+      "Functional Systems Analyst and Data Analyst with 4+ years of experience in the analysis of operational and management processes, requirements gathering and documentation, and coordination between business and technical teams. Previously, close to 15 years in logistics, dispatch and administrative management of operational processes — a background that brings a solid operational perspective to my current functional and analytical work.",
+      "Focused on using data for decision-making: building dashboards and reports with Python (pandas, openpyxl), Power Query, advanced Excel, JavaScript embedded in HTML for dashboard calculations, and Google Looker Studio, plus early-stage use of Power BI (DAX). I work daily with the SAF ERP for data extraction, transformation and modeling, requirements documentation and functional validation of developments. I complement the functional profile with a technical background in backend development (PHP, Laravel, Python, Java), which helps bridge communication between business and technical teams."
+    ],
+    experience: [
+      {
+        company: "Lustramax",
+        meta: "Tortuguitas, Buenos Aires, Argentina",
+        subroles: [
+          {
+            title: "Data Lead & Functional Systems Analyst",
+            meta: "2025 – Present",
+            bullets: [
+              "Requirements gathering, functional analysis and documentation together with business users, within the SAF ERP.",
+              "Coordination with the SAF ERP development consultancy, acting as the link between business and technology.",
+              "Definition of business rules, functional validation of developments and support during acceptance testing.",
+              "Validation of implemented solutions together with the development consultancy, ensuring alignment with business processes.",
+              "Design, development and maintenance of control panels and management indicators (KPIs), combining advanced Excel, Python (pandas, openpyxl), Power Query, JavaScript embedded in HTML and Google Looker Studio.",
+              "Extraction, transformation and modeling of data from the SAF ERP for reporting and analysis (SQL).",
+              "Development of management reports, executive dashboards, visualizations and ad hoc analysis.",
+              "Quality control, consistency and reliability of the information used for decision-making.",
+              "Application of programming and database knowledge to understand the ERP's technical logic and facilitate communication between business and technology.",
+              "Ongoing support to users on management and reporting tools."
+            ]
+          },
+          {
+            title: "Data Analyst",
+            meta: "2023 – 2025",
+            bullets: [
+              "Commercial and administrative data analysis for the purchasing, sales, billing and logistics areas.",
+              "Development of multiple custom management dashboards for each area involved.",
+              "Extraction, transformation and modeling of data from the SAF ERP for reporting (SQL).",
+              "Built dashboards and reports combining advanced Excel, Python (pandas, openpyxl), Power Query, JavaScript embedded in HTML and Google Looker Studio."
+            ]
+          },
+          {
+            title: "Logistics Analyst",
+            meta: "Sept. 2021 – 2023",
+            bullets: [
+              "Data analysis applied to integrated logistics and warehouse management.",
+              "Management and tracking of own and third-party fleets.",
+              "Analysis of operating costs and delivery compliance rates.",
+              "Control of dispatched merchandise, with and without proper sign-off."
+            ]
+          }
+        ]
+      },
+      {
+        role: "Delivery Fleet Management for App Platforms",
+        company: "Independent Contractor",
+        meta: "2020 · Argentina",
+        bullets: [
+          "Independent management of delivery fleets for on-demand delivery-platform applications."
+        ]
+      },
+      {
+        role: "Traffic & Planning Analyst",
+        company: "Lustramax",
+        meta: "2019 · Tortuguitas, Buenos Aires, Argentina",
+        bullets: [
+          "Tracking of deliveries and delivery units on the road.",
+          "Efficiency analysis of the operation through management reports."
+        ]
+      }
+    ],
+    priorExperience: [
+      {
+        company: "24 Med (American Surgery)",
+        role: "Head of Logistics",
+        period: "2017 – 2018",
+        note: "Team of ~20 people; distribution and recovery of sterilized and non-sterilized orthopedic material. Took part in reorganizing the warehouse layout, speeding up order-prep and delivery-compliance times by over 50%."
+      },
+      {
+        company: "Furlong",
+        role: "International Fleet Administrator",
+        period: "2016",
+        note: "Managed international fleet documentation for the Ford and Volkswagen accounts: cargo manifests for brand-new (0km) vehicles and customs registration in the Malvina system for border crossings."
+      },
+      {
+        company: "American Surgery",
+        role: "Head of Logistics (previously Logistics Analyst)",
+        period: "2015 – 2016",
+        note: "Team of ~12 people; distribution and recovery of orthopedic material for hospitals and private healthcare institutions. Achievements in cost reduction, improved delivery times and zone-optimized routes."
+      },
+      {
+        company: "Codylsa",
+        role: "Account Management for Unilever and P&G (previously Logistics Administrator)",
+        period: "2014",
+        note: "Delivery tracking, dispatch coordination and planning, claims and shrinkage analysis, and reconciliation with the billing department."
+      },
+      {
+        company: "Independent venture",
+        role: "Transportation",
+        period: "2013",
+        note: "Own transportation company project."
+      },
+      {
+        company: "Exologística",
+        role: "Documentation & Routing Administrator",
+        period: "2009 – 2012",
+        note: "Managed waybills and delivery notes from origin, assigned and collaborated on unit routing (TMS system), reconciled and controlled deliveries and shrinkage. Implemented an internal system for managing routing zones."
+      },
+      {
+        company: "Ryder Logistics",
+        role: "Logistics Dispatch Administrator",
+        period: "2008",
+        note: "Prepared route-sheet documentation and delivery notes, checked load compliance, and prepared cross-docking documentation (WMS system) for the Philips logistics operation."
+      }
+    ],
+    education: [
+      { school: "Centro de Estudios Ballester (CEB)", detail: "High school diploma in Business Administration and Management." }
+    ],
+    certifications: [
+      "Coderhouse — Data Analyst.",
+      "Coderhouse — Python & Django Full Stack Developer.",
+      "Egg Cooperation — Java Full Stack Developer.",
+      "Udemy — Data Analysis & Visualization.",
+      "GitHub for Developers.",
+      "Web Development Fundamentals."
+    ],
+    skills: [
+      {
+        cat: "Business & Functional",
+        items: "Functional analysis and documentation, user stories and scope definition, cross-team coordination, functional validation and acceptance testing, agile methodologies."
+      },
+      {
+        cat: "Data & BI",
+        items: "SQL, data analysis, ETL, advanced Excel (pivot tables, VLOOKUP, Power Query), Python (pandas, openpyxl), JavaScript for HTML dashboards, Google Looker Studio, reporting, dashboards and KPIs, early-stage Power BI (DAX), permissions and access administration."
+      },
+      {
+        cat: "Systems",
+        items: "SAF ERP (requirements gathering, documentation and functional validation)."
+      },
+      {
+        cat: "Development & Technical",
+        items: "PHP, Laravel, Python, Java, microservices architecture, Docker, Git / version control, Linux."
+      }
+    ]
+  }
+};
+
+let currentLang = "es";
+
+function render(lang) {
+  const c = CONTENT[lang];
+  document.documentElement.lang = lang;
+
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    if (c[key] !== undefined) el.textContent = c[key];
+  });
+
+  document.getElementById("langToggleBtn").textContent = lang === "es" ? "EN" : "ES";
+
+  document.getElementById("summaryText").innerHTML =
+    c.summary.map(p => `<p>${p}</p>`).join("");
+
+  document.getElementById("experienceList").innerHTML = c.experience.map(job => {
+    if (job.subroles) {
+      return `
+        <div class="company-block">
+          <div class="company-name">${job.company}</div>
+          <div class="company-meta">${job.meta}</div>
+          ${job.subroles.map(sr => `
+            <div class="subrole">
+              <div class="subrole-title">${sr.title}</div>
+              <div class="subrole-meta">${sr.meta}</div>
+              <ul>${sr.bullets.map(b => `<li>${b}</li>`).join("")}</ul>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+    return `
+      <div class="job">
+        <div class="job-title">${job.role} — <span class="company">${job.company}</span></div>
+        <div class="job-meta">${job.meta}</div>
+        <ul>${job.bullets.map(b => `<li>${b}</li>`).join("")}</ul>
+        ${job.placeholderNote ? `<div class="placeholder-note">${job.placeholderNote}</div>` : ""}
+      </div>
+    `;
+  }).join("");
+
+  document.getElementById("priorList").innerHTML = c.priorExperience.map(p => `
+    <div class="prior-item">
+      <div class="prior-head">${p.role} — ${p.company}</div>
+      <div class="prior-period">${p.period}</div>
+      <div class="prior-note">${p.note}</div>
+    </div>
+  `).join("");
+
+  document.getElementById("educationList").innerHTML = c.education.map(ed => `
+    <div class="edu-item"><span class="school">${ed.school}</span> — ${ed.detail}</div>
+  `).join("");
+
+  document.getElementById("certsList").innerHTML =
+    "<ul>" + c.certifications.map(cert => `<li class="cert-item">${cert}</li>`).join("") + "</ul>";
+
+  document.getElementById("skillsList").innerHTML = c.skills.map(s => `
+    <div class="skill-group">
+      <div class="skill-cat">${s.cat}</div>
+      <div class="skill-items">${s.items}</div>
+    </div>
+  `).join("");
+}
+
+function toggleLang() {
+  currentLang = currentLang === "es" ? "en" : "es";
+  render(currentLang);
+}
+
+function downloadPdf() {
+  const buttons = [document.getElementById("pdfBtnTop"), document.getElementById("pdfBtnSide")];
+  buttons.forEach(b => b.disabled = true);
+
+  const filename = currentLang === "es"
+    ? "CV_Nahuel_Cialone.pdf"
+    : "Nahuel_Cialone_Resume.pdf";
+
+  const opt = {
+    margin: 0,
+    filename: filename,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    pagebreak: { mode: ["css", "avoid-all"] }
+  };
+
+  html2pdf().set(opt).from(document.getElementById("cv-container")).save()
+    .then(() => buttons.forEach(b => b.disabled = false))
+    .catch(() => buttons.forEach(b => b.disabled = false));
+}
+
+document.getElementById("langToggleBtn").addEventListener("click", toggleLang);
+document.getElementById("pdfBtnTop").addEventListener("click", downloadPdf);
+document.getElementById("pdfBtnSide").addEventListener("click", downloadPdf);
+
+render(currentLang);
+</script>
+</body>
+</html>
