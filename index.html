@@ -86,12 +86,8 @@
 
   /* Equal-height columns via a real, plain DOM element (.sidebar-bg)
      absolutely positioned to always match the container's full height,
-     with the sidebar itself floated on top of it. html2canvas (used by
-     the PDF-download button) has real trouble with CSS Grid's row
-     stretch AND with display:table/table-cell's column sizing (both
-     were tried and both produced broken/cropped exports) — plain
-     float + absolute positioning with explicit pixel widths is the
-     one layout technique it has always rendered correctly. */
+     with the sidebar itself floated on top of it. Simple, reliable
+     cross-browser technique for equal-height columns. */
   .sidebar-bg {
     position: absolute;
     top: 0;
@@ -367,13 +363,6 @@
     .sidebar, .main, .sidebar-bg { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
 
-  /* Applied temporarily (via JS) only while html2pdf.js is capturing the
-     page, so the drop shadow / rounded corners don't leave stray slivers
-     on the exported PDF's page cuts. */
-  .pdf-mode #cv-container {
-    box-shadow: none;
-    border-radius: 0;
-  }
 </style>
 </head>
 <body>
@@ -433,7 +422,6 @@
   </main>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 /* =============================================================
@@ -813,125 +801,438 @@ function toggleLang() {
   render(currentLang);
 }
 
-/* Builds the PDF by hand with html2canvas + jsPDF instead of the higher-level
-   html2pdf.js helper: that helper was found to silently squeeze this page's
-   content into a ~794px-wide render (roughly A4 width in CSS pixels) no
-   matter what options were passed, cropping most of the sidebar and the
-   left edge of the main column on every export. Calling html2canvas
-   directly captures the real, full-width element correctly, and this
-   function then slices that single tall image into A4 pages itself —
-   nudging each page break so it never lands in the middle of a job entry,
-   a sub-role, or a "previous experience" item. */
+/* Loads assets/nahuel-cialone.jpg and returns it as a circular PNG data
+   URL (via a plain 2D canvas clip — unrelated to any screenshot library),
+   so it can be dropped into the PDF as an image. Returns null if the
+   photo can't be loaded (e.g. opened as a local file without a photo
+   next to it), in which case the PDF is generated without it. */
+async function loadCircularPhoto(url, sizePx = 320) {
+  try {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    const ok = await new Promise(resolve => {
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = url;
+    });
+    if (!ok) return null;
+    const canvas = document.createElement("canvas");
+    canvas.width = sizePx;
+    canvas.height = sizePx;
+    const ctx = canvas.getContext("2d");
+    ctx.beginPath();
+    ctx.arc(sizePx / 2, sizePx / 2, sizePx / 2, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+    const side = Math.min(img.naturalWidth, img.naturalHeight);
+    const sx = (img.naturalWidth - side) / 2;
+    const sy = (img.naturalHeight - side) / 2;
+    ctx.drawImage(img, sx, sy, side, side, 0, 0, sizePx, sizePx);
+    return canvas.toDataURL("image/png");
+  } catch (e) {
+    return null;
+  }
+}
+
+/* Builds the PDF entirely with jsPDF's own text/drawing API, reading
+   straight from CONTENT — no screenshot of the page is involved at any
+   point. Earlier versions rasterized the whole page with html2canvas and
+   embedded that as a JPEG, which looked identical on screen but meant the
+   PDF had no real text layer at all: any tool that reads a PDF's text
+   (an ATS, a job-portal "import your CV" parser, Ctrl+F, a screen reader)
+   saw nothing and treated it as a scanned image. Drawing the text
+   natively fixes that at the root, and also gives real clickable links.
+   Sections are measured before they're drawn so a page break never lands
+   in the middle of a role/company/bullet group, and "Experiencia Previa
+   en Logística" is still forced onto its own fresh page, as before. */
 async function downloadPdf() {
-  const buttons = [document.getElementById("pdfBtnTop")];
-  buttons.forEach(b => b.disabled = true);
-  document.body.classList.add("pdf-mode");
+  const btn = document.getElementById("pdfBtnTop");
+  btn.disabled = true;
 
   try {
-    const container = document.getElementById("cv-container");
-    const containerTop = container.getBoundingClientRect().top;
+    const c = CONTENT[currentLang];
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
 
-    const canvas = await html2canvas(container, { scale: 2, useCORS: true });
-    const scaleFactor = canvas.width / container.getBoundingClientRect().width;
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const sidebarW = 62;
+    const sbPad = 8;
+    const sbW = sidebarW - sbPad * 2;
+    const mainX = sidebarW + 10;
+    const mainW = pageW - mainX - 12;
+    const topY = 18;
+    const bottomLimit = pageH - 15;
 
-    // Elements that must never be split across a page break, translated
-    // into their [top, bottom] range in canvas-pixel space.
-    const avoidSelectors = ".job, .subrole, .company-block, .prior-item";
-    const avoidRanges = Array.from(document.querySelectorAll(avoidSelectors)).map(el => {
-      const r = el.getBoundingClientRect();
-      return {
-        top: (r.top - containerTop) * scaleFactor,
-        bottom: (r.bottom - containerTop) * scaleFactor
-      };
+    const COLOR = {
+      graphite900: [29, 31, 34],
+      graphite800: [42, 45, 49],
+      graphite700: [58, 62, 67],
+      graphite300: [183, 188, 193],
+      textMain: [36, 38, 43],
+      textMuted: [91, 96, 102],
+      sidebarText: [231, 232, 234],
+      sidebarMuted: [167, 172, 178]
+    };
+
+    const lh = size => size * 0.49;
+
+    function drawSidebarStrip() {
+      doc.setFillColor(...COLOR.graphite900);
+      doc.rect(0, 0, sidebarW, pageH, "F");
+    }
+
+    let y = topY;
+    function newMainPage() {
+      doc.addPage();
+      drawSidebarStrip();
+      y = topY;
+    }
+    function ensureSpace(h) {
+      if (y + h > bottomLimit) newMainPage();
+    }
+
+    function heading(text) {
+      ensureSpace(12);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(...COLOR.graphite800);
+      doc.text(text.toUpperCase(), mainX, y);
+      doc.setDrawColor(...COLOR.graphite800);
+      doc.setLineWidth(0.5);
+      doc.line(mainX, y + 1.8, mainX + mainW, y + 1.8);
+      y += 9;
+    }
+
+    function paragraph(text, { size = 10, style = "normal", color = COLOR.textMain, gapAfter = 3 } = {}) {
+      doc.setFont("helvetica", style);
+      doc.setFontSize(size);
+      doc.setTextColor(...color);
+      const step = lh(size);
+      doc.splitTextToSize(text, mainW).forEach(line => {
+        ensureSpace(step);
+        doc.text(line, mainX, y);
+        y += step;
+      });
+      y += gapAfter;
+    }
+
+    // Measures the whole list first so a short list (like the
+    // certifications list) doesn't get orphaned — a couple of items on
+    // one page and the rest on an otherwise-empty next page.
+    function bulletList(items, { size = 9.5 } = {}) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(size);
+      let totalLines = 0;
+      const wrapped = items.map(text => {
+        const lines = doc.splitTextToSize(text, mainW - 6);
+        totalLines += lines.length;
+        return lines;
+      });
+      ensureSpace(totalLines * lh(size));
+
+      doc.setTextColor(...COLOR.textMain);
+      const step = lh(size);
+      wrapped.forEach(lines => {
+        lines.forEach((line, i) => {
+          if (i === 0) doc.text("-", mainX, y);
+          doc.text(line, mainX + 4, y);
+          y += step;
+        });
+      });
+      y += 3;
+    }
+
+    // Two-tone "Role — Company" title line (role in one color, company in
+    // another, matching the on-screen design), falling back to plain
+    // wrapped text if the combined string doesn't fit on one line.
+    function titleLine(role, company, size, colorRole, colorCompany) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(size);
+      const full = role + " — " + company;
+      if (doc.getTextWidth(full) <= mainW) {
+        doc.setTextColor(...colorRole);
+        const roleText = role + " — ";
+        doc.text(roleText, mainX, y);
+        const w = doc.getTextWidth(roleText);
+        doc.setTextColor(...colorCompany);
+        doc.text(company, mainX + w + 0.4, y);
+        y += lh(size);
+      } else {
+        doc.setTextColor(...colorRole);
+        doc.splitTextToSize(full, mainW).forEach(line => {
+          doc.text(line, mainX, y);
+          y += lh(size);
+        });
+      }
+    }
+
+    function titleLineHeight(role, company, size) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(size);
+      const full = role + " — " + company;
+      const lines = doc.getTextWidth(full) <= mainW ? 1 : doc.splitTextToSize(full, mainW).length;
+      return lines * lh(size);
+    }
+
+    // ---- Atomic blocks: height is measured first, then the whole block
+    // is drawn as a unit, so a page break never lands mid-block. ----
+
+    function subroleHeight(sr) {
+      doc.setFont("helvetica", "bold"); doc.setFontSize(10.5);
+      const titleLines = doc.splitTextToSize(sr.title, mainW - 4).length;
+      doc.setFont("helvetica", "italic"); doc.setFontSize(9);
+      const metaLines = doc.splitTextToSize(sr.meta, mainW - 4).length;
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9.5);
+      let bulletLines = 0;
+      sr.bullets.forEach(b => { bulletLines += doc.splitTextToSize(b, mainW - 8).length; });
+      return titleLines * lh(10.5) + metaLines * lh(9) + bulletLines * lh(9.5) + 6;
+    }
+
+    function drawSubrole(sr) {
+      ensureSpace(subroleHeight(sr));
+      const startY = y - 2;
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10.5);
+      doc.setTextColor(...COLOR.graphite800);
+      doc.splitTextToSize(sr.title, mainW - 4).forEach(line => { doc.text(line, mainX + 4, y); y += lh(10.5); });
+
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(9);
+      doc.setTextColor(...COLOR.textMuted);
+      doc.splitTextToSize(sr.meta, mainW - 4).forEach(line => { doc.text(line, mainX + 4, y); y += lh(9); });
+      y += 1;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      doc.setTextColor(...COLOR.textMain);
+      sr.bullets.forEach(b => {
+        doc.splitTextToSize(b, mainW - 8).forEach((line, i) => {
+          if (i === 0) doc.text("-", mainX + 4, y);
+          doc.text(line, mainX + 8, y);
+          y += lh(9.5);
+        });
+      });
+
+      doc.setDrawColor(...COLOR.graphite300);
+      doc.setLineWidth(0.35);
+      doc.line(mainX, startY, mainX, y - lh(9.5) + 1);
+      y += 5;
+    }
+
+    function simpleJobHeight(job) {
+      const titleH = titleLineHeight(job.role, job.company, 11);
+      doc.setFont("helvetica", "italic"); doc.setFontSize(9);
+      const metaH = doc.splitTextToSize(job.meta, mainW).length * lh(9);
+      let bulletH = 0;
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9.5);
+      job.bullets.forEach(b => { bulletH += doc.splitTextToSize(b, mainW - 4).length * lh(9.5); });
+      return titleH + metaH + bulletH + 9;
+    }
+
+    function drawSimpleJob(job) {
+      ensureSpace(simpleJobHeight(job));
+      titleLine(job.role, job.company, 11, COLOR.graphite900, COLOR.graphite700);
+      y += 1;
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(9);
+      doc.setTextColor(...COLOR.textMuted);
+      doc.splitTextToSize(job.meta, mainW).forEach(line => { doc.text(line, mainX, y); y += lh(9); });
+      y += 2;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      doc.setTextColor(...COLOR.textMain);
+      job.bullets.forEach(b => {
+        doc.splitTextToSize(b, mainW - 4).forEach((line, i) => {
+          if (i === 0) doc.text("-", mainX, y);
+          doc.text(line, mainX + 4, y);
+          y += lh(9.5);
+        });
+      });
+      y += 8;
+    }
+
+    function priorItemHeight(p) {
+      const titleH = titleLineHeight(p.role, p.company, 10);
+      doc.setFont("helvetica", "italic"); doc.setFontSize(9);
+      const periodH = doc.splitTextToSize(p.period, mainW).length * lh(9);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+      const noteH = doc.splitTextToSize(p.note, mainW).length * lh(9);
+      return titleH + periodH + noteH + 7.5;
+    }
+
+    function drawPriorItem(p) {
+      ensureSpace(priorItemHeight(p));
+      titleLine(p.role, p.company, 10, COLOR.graphite900, COLOR.graphite900);
+      y += 1;
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(9);
+      doc.setTextColor(...COLOR.textMuted);
+      doc.splitTextToSize(p.period, mainW).forEach(line => { doc.text(line, mainX, y); y += lh(9); });
+      y += 1.5;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(...COLOR.textMain);
+      doc.splitTextToSize(p.note, mainW).forEach(line => { doc.text(line, mainX, y); y += lh(9); });
+      y += 6;
+    }
+
+    function eduLine(school, detail) {
+      ensureSpace(lh(9.5) + 2);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      const label = school + " — ";
+      const full = label + detail;
+      if (doc.getTextWidth(full) <= mainW) {
+        doc.setTextColor(...COLOR.graphite900);
+        doc.text(label, mainX, y);
+        const w = doc.getTextWidth(label);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...COLOR.textMain);
+        doc.text(detail, mainX + w, y);
+        y += lh(9.5) + 2;
+      } else {
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...COLOR.textMain);
+        doc.splitTextToSize(full, mainW).forEach(line => {
+          ensureSpace(lh(9.5));
+          doc.text(line, mainX, y);
+          y += lh(9.5);
+        });
+        y += 2;
+      }
+    }
+
+    // ---------------- Sidebar (drawn once, on page 1) ----------------
+    drawSidebarStrip();
+
+    let sy = 14;
+    const photo = await loadCircularPhoto("assets/nahuel-cialone.jpg");
+    if (photo) {
+      const photoSize = 32;
+      doc.addImage(photo, "PNG", (sidebarW - photoSize) / 2, sy, photoSize, photoSize);
+      sy += photoSize + 6;
+    }
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(255, 255, 255);
+    doc.text("Nahuel Cialone", sidebarW / 2, sy, { align: "center" });
+    sy += 6;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...COLOR.sidebarMuted);
+    doc.splitTextToSize(c.tagline, sbW).forEach(line => {
+      doc.text(line, sidebarW / 2, sy, { align: "center" });
+      sy += 3.8;
+    });
+    sy += 4;
+
+    function sidebarHeading(text) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...COLOR.sidebarMuted);
+      doc.text(text.toUpperCase(), sbPad, sy);
+      doc.setDrawColor(...COLOR.graphite700);
+      doc.setLineWidth(0.3);
+      doc.line(sbPad, sy + 1.3, sidebarW - sbPad, sy + 1.3);
+      sy += 6;
+    }
+
+    // Keep these in sync with the visible contact list in the HTML above.
+    function contactLine(label, text, url) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...COLOR.sidebarText);
+      const full = label ? `${label} ${text}` : text;
+      doc.splitTextToSize(full, sbW).forEach((line, i) => {
+        if (url && i === 0) doc.textWithLink(line, sbPad, sy, { url });
+        else doc.text(line, sbPad, sy);
+        sy += 4;
+      });
+      sy += 1.5;
+    }
+
+    sidebarHeading(c.contactHeading);
+    contactLine("WhatsApp:", "+54 9 11 2388-8901", "https://wa.me/5491123888901");
+    contactLine("Email:", "ncialone@gmail.com", "mailto:ncialone@gmail.com");
+    contactLine("LinkedIn:", "linkedin.com/in/ncialone", "https://www.linkedin.com/in/ncialone");
+    contactLine("GitHub:", "github.com/ncialone", "https://github.com/ncialone");
+    contactLine("", c.location, null);
+
+    sy += 2;
+    sidebarHeading(c.skillsHeading);
+    c.skills.forEach(s => {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(255, 255, 255);
+      doc.text(s.cat, sbPad, sy);
+      sy += 3.8;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(...COLOR.sidebarMuted);
+      doc.splitTextToSize(s.items, sbW).forEach(line => { doc.text(line, sbPad, sy); sy += 3.4; });
+      sy += 3;
+    });
+
+    // ---------------- Main content ----------------
+    y = topY;
+
+    heading(c.summaryHeading);
+    c.summary.forEach(p => paragraph(p, { size: 10, gapAfter: 3 }));
+    y += 3;
+
+    heading(c.experienceHeading);
+    c.experience.forEach(job => {
+      if (job.subroles) {
+        ensureSpace(14);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12.5);
+        doc.setTextColor(...COLOR.graphite900);
+        doc.text(job.company, mainX, y);
+        y += lh(12.5);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(...COLOR.textMuted);
+        doc.splitTextToSize(job.meta, mainW).forEach(line => { doc.text(line, mainX, y); y += lh(9); });
+        y += 3;
+        job.subroles.forEach(drawSubrole);
+        y += 3;
+      } else {
+        drawSimpleJob(job);
+      }
     });
 
     // Hardcoded: "Experiencia Previa en Logística" always starts on a
-    // fresh page, rather than having its heading (or first entries) left
-    // dangling at the bottom of the previous page.
-    const forcedBreakTops = Array.from(document.querySelectorAll(".prior")).map(el =>
-      (el.getBoundingClientRect().top - containerTop) * scaleFactor
-    );
+    // fresh page, so it never has its heading or first entries dangling
+    // at the bottom of the previous page.
+    if (y !== topY) newMainPage();
+    heading(c.priorHeading);
+    c.priorExperience.forEach(drawPriorItem);
 
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
-    const pageWidthMm = pdf.internal.pageSize.getWidth();
-    const pageHeightMm = pdf.internal.pageSize.getHeight();
-    const pxToMm = pageWidthMm / canvas.width;
-    const basePageHeightPx = pageHeightMm / pxToMm;
+    y += 2;
+    heading(c.educationHeading);
+    c.education.forEach(ed => eduLine(ed.school, ed.detail));
 
-    // Matches .main's own padding-top (40px) — reproduced here so a page
-    // that starts with a forced section break gets the same breathing
-    // room above its heading that page 1 has above "PERFIL PROFESIONAL".
-    const topPaddingPx = 40 * scaleFactor;
-    const sidebarWidthPx = 300 * scaleFactor;
-    const sidebarColor = getComputedStyle(document.documentElement)
-      .getPropertyValue("--graphite-900").trim() || "#1d1f22";
-
-    let y = 0;
-    let pageIndex = 0;
-    while (y < canvas.height - 1) {
-      const isForcedPageStart = forcedBreakTops.some(t => Math.abs(t - y) < 2);
-      const topMargin = isForcedPageStart ? topPaddingPx : 0;
-
-      let sliceEnd = Math.min(y + (basePageHeightPx - topMargin), canvas.height);
-
-      // If this cut point falls inside a protected block, move it up to
-      // that block's top edge so the whole block flows to the next page.
-      for (const range of avoidRanges) {
-        if (sliceEnd > range.top && sliceEnd < range.bottom) {
-          if (range.top > y + 40) {
-            sliceEnd = range.top;
-          }
-          break;
-        }
-      }
-
-      // Forced section breaks always win, even if that leaves whitespace
-      // at the bottom of the current page — but only when the section
-      // doesn't already start right at the top of this page (otherwise
-      // this would insert a near-blank extra page for no reason).
-      for (const breakTop of forcedBreakTops) {
-        if (breakTop > y + 50 && breakTop < sliceEnd) {
-          sliceEnd = breakTop;
-        }
-      }
-
-      const sliceHeight = Math.max(1, Math.round(sliceEnd - y));
-      const pageCanvas = document.createElement("canvas");
-      pageCanvas.width = canvas.width;
-      pageCanvas.height = sliceHeight + topMargin;
-      const ctx = pageCanvas.getContext("2d");
-
-      if (topMargin > 0) {
-        // White page background, with the sidebar's dark column carried
-        // through the margin gap so it reads as one continuous panel —
-        // only the main (right) column gets the extra breathing room.
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-        ctx.fillStyle = sidebarColor;
-        ctx.fillRect(0, 0, sidebarWidthPx, topMargin);
-      }
-
-      ctx.drawImage(
-        canvas, 0, y, canvas.width, sliceHeight,
-        0, topMargin, canvas.width, sliceHeight
-      );
-
-      const imgData = pageCanvas.toDataURL("image/jpeg", 0.95);
-      if (pageIndex > 0) pdf.addPage();
-      pdf.addImage(imgData, "JPEG", 0, 0, pageWidthMm, (sliceHeight + topMargin) * pxToMm);
-
-      y += sliceHeight;
-      pageIndex++;
-    }
+    y += 3;
+    // Keep the heading and its (short) list together, so the heading
+    // never ends up orphaned alone at the bottom of a page.
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    let certLines = 0;
+    c.certifications.forEach(t => { certLines += doc.splitTextToSize(t, mainW - 6).length; });
+    ensureSpace(12 + certLines * lh(9.5));
+    heading(c.certsHeading);
+    bulletList(c.certifications, { size: 9.5 });
 
     const filename = currentLang === "es"
       ? "CV_Nahuel_Cialone.pdf"
       : "Nahuel_Cialone_Resume.pdf";
-    pdf.save(filename);
+    doc.save(filename);
   } finally {
-    buttons.forEach(b => b.disabled = false);
-    document.body.classList.remove("pdf-mode");
+    btn.disabled = false;
   }
 }
 
