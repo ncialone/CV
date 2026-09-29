@@ -991,9 +991,27 @@ async function downloadPdf() {
       return titleLines * lh(10.5) + metaLines * lh(9) + bulletLines * lh(9.5) + 6;
     }
 
+    // Alto mínimo para arrancar un subrol: título + meta + primer bullet.
+    // El subrol ya NO es un bloque atómico: puede partirse entre páginas
+    // bullet por bullet, así no queda un hueco en blanco enorme.
+    function subroleLeadHeight(sr) {
+      doc.setFont("helvetica", "bold"); doc.setFontSize(10.5);
+      const titleLines = doc.splitTextToSize(sr.title, mainW - 4).length;
+      doc.setFont("helvetica", "italic"); doc.setFontSize(9);
+      const metaLines = doc.splitTextToSize(sr.meta, mainW - 4).length;
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9.5);
+      const firstBullet = doc.splitTextToSize(sr.bullets[0], mainW - 8).length * lh(9.5);
+      return titleLines * lh(10.5) + metaLines * lh(9) + firstBullet + 6;
+    }
+
     function drawSubrole(sr) {
-      ensureSpace(subroleHeight(sr));
-      const startY = y - 2;
+      ensureSpace(subroleLeadHeight(sr));
+      let segStart = y - 2;
+      const closeSeg = () => {
+        doc.setDrawColor(...COLOR.graphite300);
+        doc.setLineWidth(0.35);
+        doc.line(mainX, segStart, mainX, y - lh(9.5) + 1);
+      };
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10.5);
@@ -1006,20 +1024,26 @@ async function downloadPdf() {
       doc.splitTextToSize(sr.meta, mainW - 4).forEach(line => { doc.text(line, mainX + 4, y); y += lh(9); });
       y += 1;
 
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9.5);
-      doc.setTextColor(...COLOR.textMain);
       sr.bullets.forEach(b => {
-        doc.splitTextToSize(b, mainW - 8).forEach((line, i) => {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9.5);
+        const lines = doc.splitTextToSize(b, mainW - 8);
+        if (y + lines.length * lh(9.5) > bottomLimit) {
+          closeSeg();
+          newMainPage();
+          segStart = y - 2;
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(9.5);
+        }
+        doc.setTextColor(...COLOR.textMain);
+        lines.forEach((line, i) => {
           if (i === 0) doc.text("-", mainX + 4, y);
           doc.text(line, mainX + 8, y);
           y += lh(9.5);
         });
       });
 
-      doc.setDrawColor(...COLOR.graphite300);
-      doc.setLineWidth(0.35);
-      doc.line(mainX, startY, mainX, y - lh(9.5) + 1);
+      closeSeg();
       y += 5;
     }
 
@@ -1189,7 +1213,7 @@ async function downloadPdf() {
     heading(c.experienceHeading);
     c.experience.forEach(job => {
       if (job.subroles) {
-        ensureSpace(14);
+        ensureSpace(14 + subroleLeadHeight(job.subroles[0]));
         doc.setFont("helvetica", "bold");
         doc.setFontSize(12.5);
         doc.setTextColor(...COLOR.graphite900);
